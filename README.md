@@ -185,9 +185,9 @@ EulerTesting.generateTestReport();
 
 ## 📞 연락처
 
-- **개발자**: [Your Name]
-- **이메일**: [your.email@example.com]
-- **GitHub**: [https://github.com/your-username](https://github.com/your-username)
+- **개발자**: [최은혁]
+- **이메일**: [tldn233@gmail.com]
+- **GitHub**: [https://github.com/silverhyuk](https://github.com/silverhyuk)
 
 ## 🙏 감사의 말
 
