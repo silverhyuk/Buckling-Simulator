@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>오일러 좌굴 시각화 도구</title>
+    <meta
+      name="description"
+      content="정다각형과 원형 기둥의 축방향 압축 좌굴 거동을 비교하는 대화형 시각화 도구"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <!-- Skip Navigation Link -->
+    <a href="#main-content" class="skip-link">메인 콘텐츠로 건너뛰기</a>
+
+    <div class="app-container">
+      <header class="app-header">
+        <h1>오일러 좌굴 시각화 도구</h1>
+        <p class="app-description">
+          정다각형과 원형 기둥의 축방향 압축 좌굴 거동을 비교해보세요
+          <span class="tooltip-trigger" aria-describedby="description-tooltip"
+            >ℹ️</span
+          >
+        </p>
+        <div id="description-tooltip" class="tooltip" role="tooltip">
+          이 도구는 오일러 공식을 사용하여 단면 형상이 기둥의 좌굴 저항에 미치는
+          영향을 시각화합니다.
+        </div>
+      </header>
+
+      <main class="app-main" role="main">
+        <!-- Parameter Panel -->
+        <aside
+          class="parameter-panel"
+          role="complementary"
+          aria-label="매개변수 제어"
+        >
+          <h2>매개변수</h2>
+
+          <!-- Shape Selection -->
+          <section
+            class="shape-selector"
+            aria-labelledby="shape-selector-heading"
+          >
+            <h3 id="shape-selector-heading">형상 선택</h3>
+            <div
+              class="shape-grid"
+              role="group"
+              aria-labelledby="shape-selector-heading"
+              aria-describedby="shape-selector-description"
+            >
+              <!-- Shape checkboxes will be populated by JavaScript -->
+            </div>
+            <div id="shape-selector-description" class="sr-only">
+              좌굴 거동을 비교할 하나 이상의 기하학적 형상을 선택하세요
+            </div>
+          </section>
+
+          <!-- Comparison Mode -->
+          <section
+            class="mode-selector"
+            aria-labelledby="mode-selector-heading"
+          >
+            <h3 id="mode-selector-heading">비교 모드</h3>
+            <div
+              class="radio-group"
+              role="radiogroup"
+              aria-labelledby="mode-selector-heading"
+              aria-describedby="mode-selector-description"
+            >
+              <label class="radio-label">
+                <input
+                  type="radio"
+                  name="comparison-mode"
+                  value="equal-area"
+                  checked
+                  aria-describedby="equal-area-description"
+                />
+                <span>동일 면적</span>
+              </label>
+              <label class="radio-label">
+                <input
+                  type="radio"
+                  name="comparison-mode"
+                  value="equal-perimeter"
+                  aria-describedby="equal-perimeter-description"
+                />
+                <span>동일 둘레</span>
+              </label>
+            </div>
+            <div id="mode-selector-description" class="sr-only">
+              형상 비교 방법을 선택하세요: 동일한 단면적 또는 동일한 둘레
+            </div>
+            <div id="equal-area-description" class="sr-only">
+              동일한 단면적을 가진 형상들을 비교합니다
+            </div>
+            <div id="equal-perimeter-description" class="sr-only">
+              동일한 둘레 길이를 가진 형상들을 비교합니다
+            </div>
+          </section>
+
+          <!-- Material Properties -->
+          <section
+            class="material-properties"
+            aria-labelledby="material-heading"
+          >
+            <h3 id="material-heading">재료 특성</h3>
+
+            <div class="input-group">
+              <label for="material-e">탄성계수 (GPa)</label>
+              <div class="input-with-slider">
+                <input
+                  type="number"
+                  id="material-e"
+                  min="10"
+                  max="210"
+                  value="200"
+                  step="1"
+                  aria-describedby="material-e-description"
+                />
+                <input
+                  type="range"
+                  id="material-e-slider"
+                  min="10"
+                  max="210"
+                  value="200"
+                  step="1"
+                  aria-label="탄성계수 슬라이더"
+                  aria-describedby="material-e-description"
+                />
+              </div>
+              <div id="material-e-description" class="sr-only">
+                재료의 탄성계수를 기가파스칼 단위로 입력하세요. 범위: 10~210 GPa
+              </div>
+            </div>
+          </section>
+
+          <!-- Geometric Properties -->
+          <section
+            class="geometric-properties"
+            aria-labelledby="geometric-heading"
+          >
+            <h3 id="geometric-heading">기하학적 특성</h3>
+
+            <div class="input-group">
+              <label for="column-height">기둥 높이 (m)</label>
+              <div class="input-with-slider">
+                <input
+                  type="number"
+                  id="column-height"
+                  min="0.5"
+                  max="5.0"
+                  value="2.0"
+                  step="0.1"
+                  aria-describedby="column-height-description"
+                />
+                <input
+                  type="range"
+                  id="column-height-slider"
+                  min="0.5"
+                  max="5.0"
+                  value="2.0"
+                  step="0.1"
+                  aria-label="기둥 높이 슬라이더"
+                  aria-describedby="column-height-description"
+                />
+              </div>
+              <div id="column-height-description" class="sr-only">
+                기둥의 높이를 미터 단위로 입력하세요. 범위: 0.5~5.0m
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label for="effective-length-factor">유효길이계수 (K)</label>
+              <select
+                id="effective-length-factor"
+                aria-describedby="effective-length-description"
+              >
+                <option value="0.5">고정-고정 (0.5)</option>
+                <option value="0.7">고정-핀 (0.7)</option>
+                <option value="1.0" selected>핀-핀 (1.0)</option>
+                <option value="2.0">고정-자유 (2.0)</option>
+              </select>
+              <div id="effective-length-description" class="sr-only">
+                기둥 단부 조건에 따른 유효길이계수
+              </div>
+            </div>
+
+            <div class="input-group target-area-group">
+              <label for="target-area">목표 면적 (cm²)</label>
+              <input
+                type="number"
+                id="target-area"
+                min="10"
+                max="400"
+                value="100"
+                step="1"
+                aria-describedby="target-area-description"
+              />
+              <div id="target-area-description" class="sr-only">
+                목표 단면적을 제곱센티미터 단위로 입력하세요. 범위: 10~400 cm²
+              </div>
+            </div>
+
+            <div
+              class="input-group target-perimeter-group"
+              style="display: none"
+            >
+              <label for="target-perimeter">목표 둘레 (cm)</label>
+              <input
+                type="number"
+                id="target-perimeter"
+                min="20"
+                max="400"
+                value="120"
+                step="1"
+                aria-describedby="target-perimeter-description"
+              />
+              <div id="target-perimeter-description" class="sr-only">
+                목표 둘레 길이를 센티미터 단위로 입력하세요. 범위: 20~400 cm
+              </div>
+            </div>
+          </section>
+
+          <!-- Reset Button -->
+          <button
+            type="button"
+            class="reset-button"
+            id="reset-parameters"
+            aria-describedby="reset-description"
+          >
+            기본값으로 재설정
+          </button>
+          <div id="reset-description" class="sr-only">
+            모든 매개변수를 기본값으로 재설정합니다
+          </div>
+        </aside>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="loading-indicator" aria-hidden="true">
+          <div class="loading-spinner"></div>
+          <span>계산 중...</span>
+        </div>
+
+        <!-- Main Content Area -->
+        <div
+          class="main-content"
+          role="region"
+          aria-label="결과 및 시각화"
+          id="main-content"
+        >
+          <!-- Chart Display -->
+          <section class="chart-section" aria-labelledby="chart-heading">
+            <h2 id="chart-heading">임계 좌굴 하중</h2>
+            <div class="chart-container">
+              <canvas
+                id="buckling-chart"
+                role="img"
+                aria-label="다양한 단면에 대한 임계 좌굴 하중을 보여주는 막대 차트"
+              ></canvas>
+            </div>
+          </section>
+
+          <!-- Cross-Section Preview -->
+          <section class="preview-section" aria-labelledby="preview-heading">
+            <h2 id="preview-heading">단면 미리보기</h2>
+            <div class="preview-controls">
+              <button
+                type="button"
+                id="compression-animation"
+                class="animation-button"
+                aria-describedby="animation-description"
+              >
+                압축 애니메이션 보기
+              </button>
+              <div id="animation-description" class="sr-only">
+                압축 거동을 애니메이션으로 보여주고 가장 약한 형상을 강조합니다
+              </div>
+            </div>
+            <div class="preview-container">
+              <svg
+                id="cross-section-svg"
+                viewBox="0 0 400 200"
+                role="img"
+                aria-label="단면 형상 미리보기"
+                aria-describedby="svg-description"
+              >
+                <!-- SVG content will be populated by JavaScript -->
+              </svg>
+              <div id="svg-description" class="sr-only">
+                선택된 단면 형상들을 비교를 위해 크기 조정하여 시각적으로
+                표현합니다
+              </div>
+            </div>
+          </section>
+
+          <!-- Results Table -->
+          <section class="results-section" aria-labelledby="results-heading">
+            <h2 id="results-heading">상세 결과</h2>
+            <div class="table-container">
+              <table
+                id="results-table"
+                class="results-table"
+                role="table"
+                aria-describedby="table-description"
+              >
+                <caption class="sr-only">
+                  선택된 형상들의 상세한 공학적 특성과 임계 좌굴 하중
+                </caption>
+                <thead>
+                  <tr>
+                    <th
+                      scope="col"
+                      class="sortable"
+                      data-sort="name"
+                      aria-describedby="shape-col-desc"
+                    >
+                      형상
+                    </th>
+                    <th
+                      scope="col"
+                      class="sortable"
+                      data-sort="area"
+                      aria-describedby="area-col-desc"
+                    >
+                      면적 (cm²)
+                    </th>
+                    <th
+                      scope="col"
+                      class="sortable"
+                      data-sort="secondMoment"
+                      aria-describedby="moment-col-desc"
+                    >
+                      I (cm⁴)
+                    </th>
+                    <th
+                      scope="col"
+                      class="sortable"
+                      data-sort="radiusOfGyration"
+                      aria-describedby="radius-col-desc"
+                    >
+                      r (cm)
+                    </th>
+                    <th
+                      scope="col"
+                      class="sortable"
+                      data-sort="slendernessRatio"
+                      aria-describedby="slenderness-col-desc"
+                    >
+                      λ
+                    </th>
+                    <th
+                      scope="col"
+                      class="sortable"
+                      data-sort="criticalLoad"
+                      aria-describedby="load-col-desc"
+                    >
+                      P_cr (kN)
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Table rows will be populated by JavaScript -->
+                </tbody>
+              </table>
+              <div id="table-description" class="sr-only">
+                선택된 각 형상에 대해 계산된 공학적 특성을 보여주는 표입니다. 열
+                제목을 클릭하여 정렬할 수 있습니다.
+              </div>
+              <div id="shape-col-desc" class="sr-only">형상 이름과 유형</div>
+              <div id="area-col-desc" class="sr-only">
+                제곱센티미터 단위의 단면적
+              </div>
+              <div id="moment-col-desc" class="sr-only">
+                센티미터의 4제곱 단위의 2차 모멘트
+              </div>
+              <div id="radius-col-desc" class="sr-only">
+                센티미터 단위의 회전반지름
+              </div>
+              <div id="slenderness-col-desc" class="sr-only">
+                세장비, 무차원
+              </div>
+              <div id="load-col-desc" class="sr-only">
+                킬로뉴턴 단위의 임계 좌굴 하중
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <!-- Footer with Export Options -->
+      <footer class="app-footer" role="contentinfo">
+        <div class="export-controls">
+          <button
+            type="button"
+            id="export-csv"
+            class="export-button"
+            aria-describedby="csv-export-desc"
+          >
+            결과를 CSV로 내보내기
+          </button>
+          <button
+            type="button"
+            id="export-chart"
+            class="export-button"
+            aria-describedby="chart-export-desc"
+          >
+            차트를 PNG로 내보내기
+          </button>
+          <div id="csv-export-desc" class="sr-only">
+            스프레드시트 응용 프로그램에서 사용할 수 있도록 계산 결과를 CSV
+            파일로 다운로드합니다
+          </div>
+          <div id="chart-export-desc" class="sr-only">
+            막대 차트를 PNG 이미지 파일로 다운로드합니다
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Live Region for Screen Reader Announcements -->
+    <div
+      id="live-region"
+      aria-live="polite"
+      aria-atomic="true"
+      class="sr-only"
+    ></div>
+
+    <!-- Scripts -->
+    <script src="math.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
