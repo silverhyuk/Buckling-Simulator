@@ -2,6 +2,12 @@
 
 정다각형과 원형 기둥의 축방향 압축 좌굴 거동을 비교하는 대화형 웹 애플리케이션입니다.
 
+## 🌐 온라인 데모
+
+**[https://buckling-simulator.tester-it.com/](https://buckling-simulator.tester-it.com/)**
+
+브라우저에서 바로 사용해보세요! 별도의 설치나 설정이 필요하지 않습니다.
+
 ## 🎯 주요 기능
 
 ### 📊 실시간 계산 및 시각화
